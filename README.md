@@ -1,3 +1,3 @@
 # holiday-central-back-office
 
-This repo includes all back office frontend functionalities
+This repo includes all back office frontend functionalities.
