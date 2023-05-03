@@ -24,9 +24,9 @@ export function DataTable(props) {
           </Tr>
         </Thead>
         <Tbody>
-          {data.map((row, rowIndex) => (
+          {data?.map((row, rowIndex) => (
             <Tr key={rowIndex} onClick={() => onRowClick(row)}>
-              {headers.map((header, cellIndex) => (
+              {headers?.map((header, cellIndex) => (
                 <Td key={cellIndex}>{row[header]}</Td>
               ))}
             </Tr>

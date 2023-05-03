@@ -77,17 +77,17 @@ const SideBar = () => {
           />
           <SidebarItem
             icon={MdOutlineAirplaneTicket}
-            name="Flight Reservations"
+            name="Flight Details"
             link="/flight-reservations"
           />
           <SidebarItem
             icon={MdOutlineHotel}
-            name="Hotel Reservations"
+            name="Hotel Details"
             link="/hotel-reservations"
           />
           <SidebarItem
             icon={MdOutlineLocalOffer}
-            name="Packages"
+            name="Packages "
             link="/packages"
           />
           <SidebarItem

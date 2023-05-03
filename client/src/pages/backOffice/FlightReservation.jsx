@@ -1,5 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  addFlight,
+  fetchAirLines,
+  fetchAirPorts,
+  fetchFlights,
+} from "./../backOffice/../../services/flightServices";
 
 import {
   Box,
@@ -19,72 +25,15 @@ import {
   Text,
   Select,
   Textarea,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
 } from "@chakra-ui/react";
 import { DataTable } from "../../components/DataTable";
 // import { useFileUpload } from "use-file-upload";
-
-const flightHeaders = [
-  "id",
-  "airline",
-  "flightNumber",
-  "departureDestination",
-  "arrivalDestination",
-  "departureDate",
-  "arrivalDate",
-  "cabinClass",
-  "airline",
-  "availableSeats",
-  "price",
-  "duration",
-  "duration",
-  "transitTime",
-  "description",
-];
-
-const flights = [
-  {
-    id: 1,
-    flightNumber: "AA123",
-    departureDestination: "New York",
-    arrivalDestination: "Los Angeles",
-    departureDate: "2023-05-15",
-    arrivalDate: "2023-05-15",
-    cabinClass: "economy",
-    airline: "American Airlines",
-    price: 450,
-    duration: "6h 30m",
-    transitTime: "0m",
-    description: "Direct flight from New York to Los Angeles",
-  },
-  {
-    id: 2,
-    flightNumber: "UA456",
-    departureDestination: "San Francisco",
-    arrivalDestination: "Chicago",
-    departureDate: "2023-05-20",
-    arrivalDate: "2023-05-20",
-    cabinClass: "business",
-    airline: "United Airlines",
-    price: 600,
-    duration: "4h 15m",
-    transitTime: "0m",
-    description: "Direct flight from San Francisco to Chicago",
-  },
-  {
-    id: 3,
-    flightNumber: "DL789",
-    departureDestination: "Atlanta",
-    arrivalDestination: "Miami",
-    departureDate: "2023-05-25",
-    arrivalDate: "2023-05-25",
-    cabinClass: "first",
-    airline: "Delta Airlines",
-    price: 700,
-    duration: "1h 50m",
-    transitTime: "0m",
-    description: "Direct flight from Atlanta to Miami",
-  },
-];
 
 const FlightReservation = () => {
   const navigate = useNavigate();
@@ -96,48 +45,60 @@ const FlightReservation = () => {
   const [arrivalDestination, setArrivalDestination] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [arrivalDate, setArrivalDate] = useState("");
+  const [departureTime, setDepartureTime] = useState("");
+  const [arrivalTime, setArrivalTime] = useState("");
   const [cabinClass, setCabinClass] = useState("");
   const [airline, setAirline] = useState("");
   const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
   const [transitTime, setTransitTime] = useState("");
-  const [description, setDescription] = useState("");
-  const [flightsData, setFlightsData] = useState(flights);
+  const [flightsData, setFlightsData] = useState();
+  const [airPortData, setAirPortData] = useState();
+  const [airLineData, setAirLineData] = useState();
+  const [availableSeats, setAvailableSeats] = useState();
 
-  const handleRowClick = (rowData) => {
-    navigate(`/view-reservations/${rowData.id}`);
+  const handleRowClick = (id) => {
+    navigate(`/view-reservations/${id}`);
   };
 
   function handleFormSubmit() {
-    // Your form submission logic
-    console.log(";;;");
-    console.log({
-      flightNumber,
-      departureDestination,
-      arrivalDestination,
-      departureDate,
-      arrivalDate,
-      price,
-    });
+    let newFlight = {
+      flight_number: flightNumber,
+      departure_destination: departureDestination,
+      arrival_destination: arrivalDestination,
+      departure_date: departureDate,
+      arrival_date: arrivalDate,
+      departure_time: departureTime,
+      arrival_time: arrivalTime,
+      isDirect: false,
+      stops: [],
+      transit_time: transitTime,
+      isReturn: false,
+      cabin_class_avaialble: [cabinClass],
+      airline: airline,
+      price: price,
+      duration: duration,
+      available_seats: availableSeats,
+    };
 
-    // Add the new flight data to the flightsData state
-    setFlightsData([
-      ...flightsData,
-      {
-        id: flightsData.length + 1,
-        flightNumber,
-        departureDestination,
-        arrivalDestination,
-        departureDate,
-        arrivalDate,
-        cabinClass,
-        airline,
-        price,
-        duration,
-        transitTime,
-        description,
-      },
-    ]);
+    console.log(newFlight, "newFlight");
+
+    const AddedFlightData = async (newFlight) => {
+      try {
+        const { data, error } = await addFlight(newFlight);
+        console.log(data, "AddedFlightData");
+        // Add the new flight data to the flightsData state
+        setFlightsData([...flightsData, data]);
+        if (error) {
+          console.log(error, "error");
+          throw new Error(error);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    AddedFlightData(newFlight);
 
     // Clear the form fields
     setFlightNumber("");
@@ -152,9 +113,47 @@ const FlightReservation = () => {
     setTransitTime("");
     setDescription("");
 
-    // Close the modal after submission
     onClose();
   }
+
+  useEffect(() => {
+    const loadFlightData = async () => {
+      try {
+        const { data, error } = await fetchFlights();
+        console.log(data, "Flightdata");
+        if (error) {
+          throw new Error(error);
+        }
+        setFlightsData(data);
+      } catch (err) {}
+    };
+
+    const loadAirPortData = async () => {
+      try {
+        const { data, error } = await fetchAirPorts();
+        console.log(data, "AirData");
+        if (error) {
+          throw new Error(error);
+        }
+        setAirPortData(data);
+      } catch (err) {}
+    };
+
+    const loadAirLineData = async () => {
+      try {
+        const { data, error } = await fetchAirLines();
+        console.log(data, "AirLineData");
+        if (error) {
+          throw new Error(error);
+        }
+        setAirLineData(data);
+      } catch (err) {}
+    };
+
+    loadAirLineData();
+    loadAirPortData();
+    loadFlightData();
+  }, []);
 
   return (
     <>
@@ -198,19 +197,32 @@ const FlightReservation = () => {
             </FormControl>
             <FormControl>
               <FormLabel>Departure Destination</FormLabel>
-              <Input
+
+              <Select
                 value={departureDestination}
                 onChange={(event) =>
                   setDepartureDestination(event.target.value)
                 }
-              />
+              >
+                {airPortData?.map((row) => (
+                  <option key={row._id} value={row?._id}>
+                    {row?.name}
+                  </option>
+                ))}
+              </Select>
             </FormControl>
             <FormControl>
               <FormLabel>Arrival Destination</FormLabel>
-              <Input
+              <Select
                 value={arrivalDestination}
                 onChange={(event) => setArrivalDestination(event.target.value)}
-              />
+              >
+                {airPortData?.map((row) => (
+                  <option key={row._id} value={row?._id}>
+                    {row?.name}
+                  </option>
+                ))}
+              </Select>
             </FormControl>
             <FormControl>
               <FormLabel>Departure Date</FormLabel>
@@ -221,6 +233,14 @@ const FlightReservation = () => {
               />
             </FormControl>
             <FormControl>
+              <FormLabel>Departure Time</FormLabel>
+              <Input
+                type="datetime-local"
+                value={departureTime}
+                onChange={(event) => setDepartureTime(event.target.value)}
+              />
+            </FormControl>
+            <FormControl>
               <FormLabel>Arrival Date</FormLabel>
               <Input
                 type="date"
@@ -228,24 +248,29 @@ const FlightReservation = () => {
                 onChange={(event) => setArrivalDate(event.target.value)}
               />
             </FormControl>
+
             <FormControl>
-              <FormLabel>Cabin Class</FormLabel>
-              <Select
-                value={cabinClass}
-                onChange={(event) => setCabinClass(event.target.value)}
-              >
-                <option value="economy">Economy</option>
-                <option value="business">Business</option>
-                <option value="first">First</option>
-              </Select>
+              <FormLabel>Arrival Time</FormLabel>
+              <Input
+                type="datetime-local"
+                value={arrivalTime}
+                onChange={(event) => setArrivalTime(event.target.value)}
+              />
             </FormControl>
             <FormControl>
               <FormLabel>Airline</FormLabel>
-              <Input
+              <Select
                 value={airline}
                 onChange={(event) => setAirline(event.target.value)}
-              />
+              >
+                {airLineData?.map((row) => (
+                  <option key={row._id} value={row?._id}>
+                    {row?.name}
+                  </option>
+                ))}
+              </Select>
             </FormControl>
+
             <FormControl>
               <FormLabel>Price</FormLabel>
               <Input
@@ -264,15 +289,26 @@ const FlightReservation = () => {
             <FormControl>
               <FormLabel>Transit Time</FormLabel>
               <Input
+                type="number"
                 value={transitTime}
                 onChange={(event) => setTransitTime(event.target.value)}
               />
             </FormControl>
             <FormControl>
-              <FormLabel>Description</FormLabel>
-              <Textarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
+              <FormLabel>Cabin Class</FormLabel>
+              <Select
+                value={cabinClass}
+                onChange={(event) => setCabinClass(event.target.value)}
+              >
+                <option value="economy">Economy</option>
+                <option value="business">Business</option>
+              </Select>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Available Seat </FormLabel>
+              <Input
+                value={availableSeats}
+                onChange={(event) => setAvailableSeats(event.target.value)}
               />
             </FormControl>
           </ModalBody>
@@ -287,14 +323,59 @@ const FlightReservation = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-      <DataTable
-        data={flightsData}
-        headers={flightHeaders}
-        onRowClick={handleRowClick}
-      />
+      <Box
+        width="100%"
+        overflowX="auto"
+        justifyContent="center"
+        borderWidth="1px"
+        borderColor="gray.200"
+        borderRadius="2xl"
+        mr={8}
+        ml={8}
+      >
+        <Table variant="simple">
+          <Thead>
+            <Tr>
+              <Th>Flight Number</Th>
+              <Th>Departure Destination</Th>
+              <Th>Arrival Destination</Th>
+              <Th>Departure Date</Th>
+              <Th>Arrival Date</Th>
+              <Th>Departure Time</Th>
+              <Th>Arrival Time</Th>
+              <Th>Cabin Class</Th>
+              <Th>Airline</Th>
+              <Th>Price</Th>
+              <Th>Duration</Th>
+              <Th>Transit Time</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {flightsData?.map((row) => (
+              <Tr key={row._id} onClick={() => handleRowClick(row._id)}>
+                <Td>{row.flight_number}</Td>
+                <Td>{row.departure_destination.city}</Td>
+                <Td>{row.arrival_destination.city}</Td>
+                <Td>{row.departure_date}</Td>
+                <Td>{row.arrival_date}</Td>
+                <Td>{row.departure_time}</Td>
+                <Td>{row.arrival_time}</Td>
+                <Td>{row.cabin_class_avaialble.join(", ")}</Td>
+                <Td>{row.airline.name}</Td>
+                <Td>{row.price}</Td>
+                <Td>{row.duration}</Td>
+                <Td>{row.transit_time}</Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
     </>
   );
 };
 
 export default FlightReservation;
+
+//     "isDirect": true,
+//     "stops": [],
+//     "isReturn": true,
